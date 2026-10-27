@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="id" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Context Protocol (MCP) — Standar Terbuka Penghubung AI & Data</title>
+  <meta name="description" content="Pelajari Model Context Protocol (MCP), standar terbuka dari Anthropic yang menghubungkan asisten AI dengan database, berkas lokal, API, dan devtools secara aman.">
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+              950: '#090d16',
+            },
+            darkbg: '#090d16',
+            darkcard: '#111726',
+            darkborder: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-darkbg text-slate-100 transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
+
+  <!-- BACKGROUND AMBIENT GLOWS -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[850px] h-[500px] bg-indigo-600/15 rounded-full blur-[140px]"></div>
+    <div class="absolute top-[35%] -left-48 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[130px]"></div>
+    <div class="absolute top-[65%] -right-48 w-[550px] h-[550px] bg-emerald-600/10 rounded-full blur-[140px]"></div>
+  </div>
+
+  <!-- 1. STICKY TOP NAVBAR -->
+  <header class="sticky top-0 z-50 w-full glass-panel border-b border-slate-800/80 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo Branding -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+          <i data-lucide="network" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-bold text-base tracking-tight text-white dark:text-white light:text-slate-900 group-hover:text-indigo-400 transition-colors">
+            Model Context Protocol
+          </span>
+          <span class="text-[10px] uppercase font-mono tracking-widest text-indigo-400">
+            Open Standard
+          </span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
+        <a href="#about" data-i18n="nav_about" class="hover:text-indigo-400 transition-colors">Tentang MCP</a>
+        <a href="#architecture" data-i18n="nav_arch" class="hover:text-indigo-400 transition-colors">Arsitektur</a>
+        <a href="#primitives" data-i18n="nav_primitives" class="hover:text-indigo-400 transition-colors">Primitives</a>
+        <a href="#playground" data-i18n="nav_playground" class="hover:text-indigo-400 transition-colors">Playground</a>
+        <a href="#directory" data-i18n="nav_directory" class="hover:text-indigo-400 transition-colors">Katalog Server</a>
+        <a href="#quickstart" data-i18n="nav_quickstart" class="hover:text-indigo-400 transition-colors">Quickstart</a>
+        <a href="#faq" data-i18n="nav_faq" class="hover:text-indigo-400 transition-colors">FAQ</a>
+      </nav>
+
+      <!-- Right Controls: Theme, Lang, GitHub, CTA -->
+      <div class="flex items-center gap-2.5">
+        
+        <!-- Language Switcher -->
+        <button 
+          id="lang-toggle" 
+          title="Ganti Bahasa / Switch Language"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold glass-card border border-slate-700/80 hover:border-indigo-500/50 text-slate-300 transition-all cursor-pointer">
+          <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span id="lang-toggle-text">EN</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button 
+          id="theme-toggle" 
+          title="Ubah Tema Gelap / Terang"
+          class="p-2 rounded-lg glass-card border border-slate-700/80 hover:border-indigo-500/50 text-slate-300 transition-all cursor-pointer">
+          <i id="theme-toggle-icon" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+        </button>
+
+        <!-- GitHub Stars Badge -->
+        <a 
+          href="https://github.com/modelcontextprotocol" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono glass-card border border-slate-700/80 hover:border-indigo-500/50 text-slate-300 transition-all">
+          <svg class="w-3.5 h-3.5 fill-current text-slate-300" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span class="text-amber-400 font-semibold">★ 24.8k</span>
+        </a>
+
+        <!-- Primary CTA -->
+        <a 
+          href="#quickstart" 
+          data-i18n="nav_cta"
+          class="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+          <span>Mulai Sekarang</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+
+        <!-- Mobile Menu Button -->
+        <button 
+          id="mobile-menu-btn" 
+          class="lg:hidden p-2 rounded-lg glass-card border border-slate-700 text-slate-300 cursor-pointer">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-800 bg-slate-900/95 px-4 pt-3 pb-5 space-y-2">
+      <a href="#about" data-i18n="nav_about" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Tentang MCP</a>
+      <a href="#architecture" data-i18n="nav_arch" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Arsitektur</a>
+      <a href="#primitives" data-i18n="nav_primitives" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Primitives</a>
+      <a href="#playground" data-i18n="nav_playground" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Playground</a>
+      <a href="#directory" data-i18n="nav_directory" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Katalog Server</a>
+      <a href="#quickstart" data-i18n="nav_quickstart" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Quickstart</a>
+      <a href="#faq" data-i18n="nav_faq" class="block px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">FAQ</a>
+    </div>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section class="relative pt-16 pb-20 md:pt-24 md:pb-28 overflow-hidden bg-grid-pattern">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      <!-- Hero Top Badge -->
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md shadow-sm">
+          <span class="flex h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
+          <span data-i18n="hero_badge" class="text-xs sm:text-sm font-medium text-indigo-300">
+            Standar Terbuka Anthropic • Ekosistem AI Universal
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Headline & Subheadline -->
+      <div class="text-center max-w-4xl mx-auto mb-10">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] mb-6">
+          <span data-i18n="hero_title" class="text-gradient-primary">
+            Standar Terbuka yang Menghubungkan AI ke Seluruh Data & Tools Anda
+          </span>
+        </h1>
+        <p data-i18n="hero_desc" class="text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed font-normal max-w-3xl mx-auto">
+          Model Context Protocol (MCP) adalah "USB-C untuk aplikasi AI". Protokol terbuka yang aman dan terstandarisasi untuk menjembatani LLM dengan database, berkas lokal, API bisnis, dan devtools tanpa integrasi kustom yang berulang.
+        </p>
+      </div>
+
+      <!-- CTA Action Buttons -->
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
+        <a 
+          href="#quickstart" 
+          class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <span data-i18n="hero_cta_primary">Jelajahi Quickstart</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+
+        <a 
+          href="#playground" 
+          class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold glass-panel border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white transition-all">
+          <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+          <span data-i18n="hero_cta_secondary">Coba Playground MCP</span>
+        </a>
+
+        <!-- Terminal Command Box -->
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono text-slate-300">
+          <span class="text-indigo-400 select-none">$</span>
+          <span id="hero-cmd-text">npx @modelcontextprotocol/create-server</span>
+          <button 
+            id="hero-copy-cmd" 
+            title="Salin Perintah"
+            class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Metric / Highlights Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 text-center">
+          <div class="text-2xl font-black text-indigo-400 font-mono mb-1" data-i18n="hero_stat_standard">Open Standard</div>
+          <p class="text-xs text-slate-400" data-i18n="hero_stat_standard_sub">JSON-RPC 2.0 & Transport Agnostik</p>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 text-center">
+          <div class="text-2xl font-black text-cyan-400 font-mono mb-1" data-i18n="hero_stat_servers">100+ Servers</div>
+          <p class="text-xs text-slate-400" data-i18n="hero_stat_servers_sub">Postgres, GitHub, Slack, SQLite, dll</p>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 text-center">
+          <div class="text-2xl font-black text-emerald-400 font-mono mb-1" data-i18n="hero_stat_community">Didukung Ekosistem</div>
+          <p class="text-xs text-slate-400" data-i18n="hero_stat_community_sub">Claude Desktop, Cursor, Antigravity, Zed</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3. INTERACTIVE ARCHITECTURE VISUALIZER -->
+  <section id="architecture" class="py-20 border-t border-slate-800/80 bg-slate-950/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-3">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+          <span>Live Architecture Simulation</span>
+        </div>
+        <h2 data-i18n="vis_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Simulator Alur Protokol MCP Interaktif
+        </h2>
+        <p data-i18n="vis_subtitle" class="text-slate-400 text-sm sm:text-base">
+          Klik pada salah satu Host atau Server untuk melihat simulasi aliran paket data JSON-RPC 2.0 secara real-time.
+        </p>
+      </div>
+
+      <!-- Architecture Interactive Board -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 relative shadow-2xl">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch mb-8">
+          
+          <!-- Column 1: MCP Hosts / Clients -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span data-i18n="vis_client_label" class="text-xs font-mono font-bold tracking-wider text-indigo-400">
+                MCP CLIENT / HOST
+              </span>
+              <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">Initiator</span>
+            </div>
+
+            <!-- Host 1: Claude Desktop -->
+            <button 
+              data-vis-target="host_claude"
+              class="w-full text-left p-4 rounded-xl glass-card border border-slate-700/60 hover:border-indigo-500 transition-all cursor-pointer group">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs">
+                    CD
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-white group-hover:text-indigo-300">Claude Desktop</div>
+                    <div class="text-[11px] text-slate-400">Desktop GUI Client</div>
+                  </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-transform group-hover:translate-x-1"></i>
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">Transport: stdio IPC</div>
+            </button>
+
+            <!-- Host 2: Cursor IDE -->
+            <button 
+              data-vis-target="host_cursor"
+              class="w-full text-left p-4 rounded-xl glass-card border border-slate-700/60 hover:border-indigo-500 transition-all cursor-pointer group">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
+                    CR
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-white group-hover:text-indigo-300">Cursor IDE</div>
+                    <div class="text-[11px] text-slate-400">AI Code Editor</div>
+                  </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-transform group-hover:translate-x-1"></i>
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">Tools: Symbol Search, Diff</div>
+            </button>
+
+            <!-- Host 3: Autonomous AI Agent -->
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400">
+              <div class="flex items-center gap-2 text-slate-300 font-semibold mb-1">
+                <i data-lucide="bot" class="w-4 h-4 text-cyan-400"></i>
+                <span>Custom Autonomous Agent</span>
+              </div>
+              <span>Dapat menginisiasi koneksi multi-server via SDK Python/TypeScript.</span>
+            </div>
+          </div>
+
+          <!-- Column 2: Protocol Bridge / Router -->
+          <div class="flex flex-col justify-between p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 relative">
+            <div class="text-center pb-2 border-b border-indigo-500/20">
+              <span data-i18n="vis_protocol_label" class="text-xs font-mono font-bold tracking-wider text-indigo-300">
+                PROTOKOL MCP (JSON-RPC 2.0)
+              </span>
+            </div>
+
+            <!-- Protocol diagram representation -->
+            <div class="my-auto py-6 text-center space-y-4">
+              <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-xl shadow-indigo-500/30">
+                <i data-lucide="cpu" class="w-8 h-8"></i>
+              </div>
+
+              <!-- Animated Data Pulse Indicator -->
+              <div class="flex items-center justify-center gap-3">
+                <div class="h-0.5 w-12 bg-indigo-500/50 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-cyan-400 animate-ping-slow"></div>
+                </div>
+                <span class="text-xs font-mono text-cyan-300 font-semibold bg-cyan-950/60 px-2.5 py-1 rounded-md border border-cyan-800">
+                  Bidirectional Stream
+                </span>
+                <div class="h-0.5 w-12 bg-indigo-500/50 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-cyan-400 animate-ping-slow"></div>
+                </div>
+              </div>
+
+              <!-- 4 Primitives Badges -->
+              <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-200 py-1 px-2 rounded">
+                  🛠️ tools/call
+                </span>
+                <span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-200 py-1 px-2 rounded">
+                  📄 resources/read
+                </span>
+                <span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-200 py-1 px-2 rounded">
+                  💬 prompts/get
+                </span>
+                <span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-200 py-1 px-2 rounded">
+                  🔄 sampling/create
+                </span>
+              </div>
+            </div>
+
+            <!-- Transport Meta -->
+            <div class="pt-3 border-t border-indigo-500/20 flex items-center justify-between text-xs text-slate-400">
+              <span data-i18n="vis_transport">Transport:</span>
+              <span id="vis-transport-name" class="font-mono text-cyan-400 font-semibold">stdio (Local Subprocess)</span>
+            </div>
+          </div>
+
+          <!-- Column 3: MCP Servers -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span data-i18n="vis_server_label" class="text-xs font-mono font-bold tracking-wider text-emerald-400">
+                MCP SERVERS (DATA & TOOLS)
+              </span>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Providers</span>
+            </div>
+
+            <!-- Server 1: PostgreSQL -->
+            <button 
+              data-vis-target="server_postgres"
+              class="w-full text-left p-4 rounded-xl glass-card border border-slate-700/60 hover:border-emerald-500 transition-all cursor-pointer group">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-white group-hover:text-emerald-300">PostgreSQL Server</div>
+                    <div class="text-[11px] text-slate-400">Query & Table Schema</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-transform group-hover:-translate-x-1"></i>
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">Tools: query, describe_table</div>
+            </button>
+
+            <!-- Server 2: Filesystem -->
+            <button 
+              data-vis-target="server_filesystem"
+              class="w-full text-left p-4 rounded-xl glass-card border border-slate-700/60 hover:border-emerald-500 transition-all cursor-pointer group">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                    <i data-lucide="folder-code" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-white group-hover:text-emerald-300">Filesystem Server</div>
+                    <div class="text-[11px] text-slate-400">Local Safe Sandbox</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-transform group-hover:-translate-x-1"></i>
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">Resources: file:// allowed paths</div>
+            </button>
+
+            <!-- Server 3: GitHub -->
+            <button 
+              data-vis-target="server_github"
+              class="w-full text-left p-4 rounded-xl glass-card border border-slate-700/60 hover:border-emerald-500 transition-all cursor-pointer group">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">
+                    <i data-lucide="git-pull-request" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm font-bold text-white group-hover:text-emerald-300">GitHub MCP Server</div>
+                    <div class="text-[11px] text-slate-400">Issues, PRs, Commits</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-transform group-hover:-translate-x-1"></i>
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">Transport: stdio / SSE Remote</div>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Live Packet Inspector (Bottom of Board) -->
+        <div class="pt-6 border-t border-slate-800">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h3 data-i18n="vis_packet_inspector" class="text-sm font-bold text-white">
+                Inspektor Paket Protokol
+              </h3>
+              <span class="text-xs font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                Metode: <strong id="vis-method-name" class="text-indigo-400">tools/call</strong>
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
+              <span>Dari: <strong id="vis-sender-name" class="text-slate-200">Claude Desktop</strong></span>
+              <span>Ke: <strong id="vis-receiver-name" class="text-slate-200">PostgreSQL Server</strong></span>
+            </div>
+          </div>
+
+          <!-- Dual Code Inspect -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div class="text-[11px] font-mono text-slate-400 mb-1.5 flex items-center justify-between">
+                <span>REQUEST (JSON-RPC 2.0)</span>
+                <span class="text-indigo-400">Outbound →</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 font-mono text-xs overflow-x-auto max-h-48">
+                <pre id="vis-req-payload"></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-mono text-slate-400 mb-1.5 flex items-center justify-between">
+                <span>RESPONSE (JSON-RPC 2.0)</span>
+                <span class="text-emerald-400">← Inbound (200 OK)</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 font-mono text-xs overflow-x-auto max-h-48">
+                <pre id="vis-res-payload"></pre>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. PROBLEM & SOLUTION (MENGAPA MCP?) -->
+  <section id="about" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+          <span data-i18n="prob_badge">Mengapa MCP Dibutuhkan?</span>
+        </div>
+        <h2 data-i18n="prob_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Mengakhiri Masalah Fragmentasi Integrasi AI (N × M)
+        </h2>
+        <p data-i18n="prob_desc" class="text-slate-400 text-base leading-relaxed">
+          Sebelum MCP, setiap aplikasi AI harus membuat konektor custom untuk setiap sumber data. MCP mengubah kekacauan N×M menjadi standar universal N+M.
+        </p>
+      </div>
+
+      <!-- Before vs After Comparison Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+        
+        <!-- Before MCP: Fragile N x M -->
+        <div class="glass-card rounded-2xl p-8 border border-red-500/20 bg-gradient-to-b from-red-950/10 to-slate-900/60 relative overflow-hidden">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center font-bold">
+              <i data-lucide="x-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 data-i18n="prob_before_title" class="text-xl font-bold text-red-200">
+                Sebelum MCP: Fragmentasi N × M
+              </h3>
+              <p class="text-xs text-red-400/80">Koneksi Kustom Siloed & Rapuh</p>
+            </div>
+          </div>
+
+          <p data-i18n="prob_before_desc" class="text-sm text-slate-300 mb-6 leading-relaxed">
+            Setiap model atau IDE harus membangun integrasi unik ke masing-masing API atau database. Rawan kesalahan, keamanan tidak terstandarisasi, dan sulit dirawat.
+          </p>
+
+          <div class="space-y-3 font-mono text-xs">
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-red-900/30 flex items-center justify-between text-slate-400">
+              <span>Claude ↔ Custom Postgres Plugin</span>
+              <span class="text-red-400 font-semibold">Khusus Claude</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-red-900/30 flex items-center justify-between text-slate-400">
+              <span>Cursor ↔ Custom Postgres Tool</span>
+              <span class="text-red-400 font-semibold">Khusus Cursor</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-red-900/30 flex items-center justify-between text-slate-400">
+              <span>AI Agent ↔ Direct SQL Wrapper</span>
+              <span class="text-red-400 font-semibold">Integrasi Manual</span>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-red-900/30 text-xs text-red-300 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>10 Asisten AI × 20 Sumber Data = 200 Konektor Spesifik</span>
+          </div>
+        </div>
+
+        <!-- After MCP: Universal Standard N + M -->
+        <div class="glass-card rounded-2xl p-8 border border-emerald-500/30 bg-gradient-to-b from-emerald-950/15 to-slate-900/60 relative overflow-hidden">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 data-i18n="prob_after_title" class="text-xl font-bold text-emerald-200">
+                Dengan MCP: Standar Universal N + M
+              </h3>
+              <p class="text-xs text-emerald-400/80">Satu Protokol untuk Seluruh Ekosistem</p>
+            </div>
+          </div>
+
+          <p data-i18n="prob_after_desc" class="text-sm text-slate-300 mb-6 leading-relaxed">
+            Buat server MCP sekali, gunakan di semua client (Claude, Cursor, Antigravity, Zed, script custom). Keamanan berbasis izin lokal dan arsitektur modular.
+          </p>
+
+          <div class="space-y-3 font-mono text-xs">
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-emerald-900/40 flex items-center justify-between text-slate-300">
+              <span class="text-white font-medium">Postgres MCP Server</span>
+              <span class="text-emerald-400 font-semibold">Terhubung ke Semua Client</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-emerald-900/40 flex items-center justify-between text-slate-300">
+              <span class="text-white font-medium">Filesystem MCP Server</span>
+              <span class="text-emerald-400 font-semibold">Aman dengan Izin Path</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-emerald-900/40 flex items-center justify-between text-slate-300">
+              <span class="text-white font-medium">GitHub MCP Server</span>
+              <span class="text-emerald-400 font-semibold">Reusable across Teams</span>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-emerald-900/40 text-xs text-emerald-300 flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>10 Asisten AI + 20 Sumber Data = Cukup 30 Komponen Terstandarisasi</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. FOUR CORE PRIMITIVES -->
+  <section id="primitives" class="py-20 border-t border-slate-800/80 bg-slate-950/30 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
+          <i data-lucide="box" class="w-3.5 h-3.5"></i>
+          <span data-i18n="prim_badge">Empat Komponen Utama</span>
+        </div>
+        <h2 data-i18n="prim_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Pondasi Arsitektur Model Context Protocol
+        </h2>
+        <p data-i18n="prim_desc" class="text-slate-400 text-base leading-relaxed">
+          MCP dibangun di atas empat konsep fundamental yang memungkinkan AI berinteraksi secara aman dengan lingkungan eksternal.
+        </p>
+      </div>
+
+      <!-- 4 Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- Primitive 1: Tools -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mb-5">
+              <i data-lucide="wrench" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="prim_tools_title" class="text-lg font-bold text-white mb-2">
+              Tools (Alat Eksekusi)
+            </h3>
+            <p data-i18n="prim_tools_desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+              Fungsi yang dapat dipanggil oleh model AI untuk melakukan tindakan nyata, seperti menjalankan query SQL, membuat commit Git, atau mengirim notifikasi.
+            </p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-indigo-300 border border-slate-800">
+            <code>tools/call &bull; schema JSON</code>
+          </div>
+        </div>
+
+        <!-- Primitive 2: Resources -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-5">
+              <i data-lucide="file-text" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="prim_resources_title" class="text-lg font-bold text-white mb-2">
+              Resources (Sumber Data)
+            </h3>
+            <p data-i18n="prim_resources_desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+              Konteks pasif berupa URI terstruktur (file://, db://) yang dapat dibaca LLM seperti berkas konfigurasi, log aplikasi, atau skema database.
+            </p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-cyan-300 border border-slate-800">
+            <code>resources/read &bull; URI scheme</code>
+          </div>
+        </div>
+
+        <!-- Primitive 3: Prompts -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-5">
+              <i data-lucide="message-square-code" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="prim_prompts_title" class="text-lg font-bold text-white mb-2">
+              Prompts (Template Kontekstual)
+            </h3>
+            <p data-i18n="prim_prompts_desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+              Template prompt siap pakai yang disediakan server untuk membantu pengguna menjalankan alur kerja kompleks dengan panduan teruji.
+            </p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-amber-300 border border-slate-800">
+            <code>prompts/get &bull; reusable flow</code>
+          </div>
+        </div>
+
+        <!-- Primitive 4: Sampling -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-5">
+              <i data-lucide="repeat" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="prim_sampling_title" class="text-lg font-bold text-white mb-2">
+              Sampling (Agentic Loop)
+            </h3>
+            <p data-i18n="prim_sampling_desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+              Fitur canggih di mana server dapat meminta model AI untuk melakukan penalaran berulang atau penalaran sub-tugas dalam batas aman.
+            </p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-emerald-300 border border-slate-800">
+            <code>sampling/createMessage</code>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 6. INTERACTIVE PLAYGROUND (LIVE JSON-RPC 2.0 SIMULATOR) -->
+  <section id="playground" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-3">
+          <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+          <span data-i18n="play_badge">Coba Langsung</span>
+        </div>
+        <h2 data-i18n="play_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Interactive Protocol Playground
+        </h2>
+        <p data-i18n="play_desc" class="text-slate-400 text-base leading-relaxed">
+          Simulasikan pesan JSON-RPC 2.0 antara MCP Client dan MCP Server. Pilih operasi atau ubah parameter untuk melihat respons langsung.
+        </p>
+      </div>
+
+      <!-- Playground Control Bar -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl">
+        
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-800 mb-6">
+          <div class="flex items-center gap-3">
+            <label for="playground-op-select" class="text-xs sm:text-sm font-semibold text-slate-300" data-i18n="play_operation">
+              Pilih Operasi Protokol:
+            </label>
+            <select 
+              id="playground-op-select" 
+              class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-indigo-500 cursor-pointer">
+              <option value="tools/list">tools/list (Daftar Alat Server)</option>
+              <option value="tools/call">tools/call (query_database PostgreSQL)</option>
+              <option value="resources/read">resources/read (file:///workspace/config.env)</option>
+              <option value="prompts/get">prompts/get (Git Review Blueprint)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span id="playground-latency" class="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-3 py-1.5 rounded-lg">
+              Latensi: 14ms (stdio)
+            </span>
+            <button 
+              id="playground-send-btn"
+              class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span data-i18n="play_btn_send">Kirim Request (JSON-RPC)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Two-column Code Display: Request & Response -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Request Panel -->
+          <div class="flex flex-col">
+            <div class="flex items-center justify-between pb-2 mb-2 text-xs font-mono text-slate-400">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                <span data-i18n="play_req_header">Request Payload (Client → Server)</span>
+              </div>
+              <button 
+                id="playground-copy-req"
+                class="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-[11px]">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span data-i18n="play_copy">Salin JSON</span>
+              </button>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 font-mono text-xs overflow-x-auto min-h-[220px]">
+              <pre id="playground-req-code"></pre>
+            </div>
+          </div>
+
+          <!-- Response Panel -->
+          <div class="flex flex-col">
+            <div class="flex items-center justify-between pb-2 mb-2 text-xs font-mono text-slate-400">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span data-i18n="play_res_header">Response Payload (Server → Client)</span>
+              </div>
+              <button 
+                id="playground-copy-res"
+                class="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-[11px]">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span data-i18n="play_copy">Salin JSON</span>
+              </button>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 font-mono text-xs overflow-x-auto min-h-[220px]">
+              <pre id="playground-res-code"></pre>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. SERVER DIRECTORY & ECOSYSTEM -->
+  <section id="directory" class="py-20 border-t border-slate-800/80 bg-slate-950/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
+          <i data-lucide="server" class="w-3.5 h-3.5"></i>
+          <span data-i18n="dir_badge">Ekosistem Server</span>
+        </div>
+        <h2 data-i18n="dir_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Katalog MCP Server Populer
+        </h2>
+        <p data-i18n="dir_desc" class="text-slate-400 text-base leading-relaxed">
+          Pilih dari puluhan server MCP resmi dan komunitas yang siap dihubungkan ke asisten AI favorit Anda dalam hitungan detik.
+        </p>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+        
+        <!-- Search Input -->
+        <div class="relative w-full md:w-80">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input 
+            type="text" 
+            id="server-search-input"
+            oninput="App.handleSearch(event)"
+            data-i18n-placeholder="dir_search_placeholder"
+            placeholder="Cari server MCP (misal: postgres, github, slack)..."
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <button onclick="App.filterCategory('all')" data-cat="all" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-500 cursor-pointer" data-i18n="dir_cat_all">
+            Semua
+          </button>
+          <button onclick="App.filterCategory('db')" data-cat="db" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold glass-panel text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-i18n="dir_cat_db">
+            Database
+          </button>
+          <button onclick="App.filterCategory('dev')" data-cat="dev" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold glass-panel text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-i18n="dir_cat_dev">
+            Developer Tools
+          </button>
+          <button onclick="App.filterCategory('web')" data-cat="web" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold glass-panel text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-i18n="dir_cat_web">
+            Web & Search
+          </button>
+          <button onclick="App.filterCategory('prod')" data-cat="prod" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold glass-panel text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-i18n="dir_cat_prod">
+            Produktivitas
+          </button>
+          <button onclick="App.filterCategory('ai')" data-cat="ai" class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold glass-panel text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-i18n="dir_cat_ai">
+            AI Memory
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Server Cards Grid (rendered dynamically by app.js) -->
+      <div id="server-catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+
+    </div>
+  </section>
+
+  <!-- 8. QUICKSTART & DEVELOPER EXPERIENCE -->
+  <section id="quickstart" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
+          <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+          <span data-i18n="quick_badge">Mulai Membangun</span>
+        </div>
+        <h2 data-i18n="quick_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Membuat MCP Server Pertama Anda dalam 3 Menit
+        </h2>
+        <p data-i18n="quick_desc" class="text-slate-400 text-base leading-relaxed">
+          Ikuti langkah sederhana menggunakan SDK resmi TypeScript atau Python, atau langsung pasang server siap pakai ke Claude Desktop / Cursor.
+        </p>
+      </div>
+
+      <!-- Code Window with Tabs -->
+      <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden max-w-4xl mx-auto shadow-2xl">
+        
+        <!-- Tab Headers -->
+        <div class="flex items-center justify-between px-6 pt-4 border-b border-slate-800 bg-slate-950/60">
+          <div class="flex space-x-6">
+            <button 
+              data-quick-tab="ts" 
+              class="pb-3 text-xs sm:text-sm font-bold text-indigo-400 border-b-2 border-indigo-500 transition-colors cursor-pointer"
+              data-i18n="quick_tab_ts">
+              TypeScript SDK
+            </button>
+            <button 
+              data-quick-tab="py" 
+              class="pb-3 text-xs sm:text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors cursor-pointer"
+              data-i18n="quick_tab_py">
+              Python SDK
+            </button>
+            <button 
+              data-quick-tab="cfg" 
+              class="pb-3 text-xs sm:text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors cursor-pointer"
+              data-i18n="quick_tab_config">
+              Konfigurasi Client JSON
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+          </div>
+        </div>
+
+        <!-- Panel 1: TypeScript -->
+        <div id="quick-panel-ts" class="quickstart-panel p-6 bg-slate-950/90 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto relative">
+          <button 
+            id="copy-ts-quick" 
+            class="absolute top-4 right-4 px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Salin Kode</span>
+          </button>
+          <pre id="code-ts-quick"><span class="text-slate-500">// 1. Install MCP SDK</span>
+<span class="text-indigo-400">npm</span> install @modelcontextprotocol/sdk
+
+<span class="text-slate-500">// 2. Buat server sederhana (src/server.ts)</span>
+<span class="text-indigo-400">import</span> { Server } <span class="text-indigo-400">from</span> <span class="text-emerald-400">"@modelcontextprotocol/sdk/server/index.js"</span>;
+<span class="text-indigo-400">import</span> { StdioServerTransport } <span class="text-indigo-400">from</span> <span class="text-emerald-400">"@modelcontextprotocol/sdk/server/stdio.js"</span>;
+<span class="text-indigo-400">import</span> { CallToolRequestSchema, ListToolsRequestSchema } <span class="text-indigo-400">from</span> <span class="text-emerald-400">"@modelcontextprotocol/sdk/types.js"</span>;
+
+<span class="text-indigo-400">const</span> server = <span class="text-indigo-400">new</span> Server({ name: <span class="text-emerald-400">"my-mcp-server"</span>, version: <span class="text-emerald-400">"1.0.0"</span> }, {
+  capabilities: { tools: {} }
+});
+
+<span class="text-slate-500">// Daftarkan tool</span>
+server.setRequestHandler(ListToolsRequestSchema, <span class="text-indigo-400">async</span> () => ({
+  tools: [{
+    name: <span class="text-emerald-400">"calculate_tax"</span>,
+    description: <span class="text-emerald-400">"Hitung PPN atau pajak transaksi"</span>,
+    inputSchema: {
+      type: <span class="text-emerald-400">"object"</span>,
+      properties: { amount: { type: <span class="text-emerald-400">"number"</span> } },
+      required: [<span class="text-emerald-400">"amount"</span>]
+    }
+  }]
+}));
+
+<span class="text-slate-500">// Jalankan via stdio</span>
+<span class="text-indigo-400">const</span> transport = <span class="text-indigo-400">new</span> StdioServerTransport();
+<span class="text-indigo-400">await</span> server.connect(transport);</pre>
+        </div>
+
+        <!-- Panel 2: Python -->
+        <div id="quick-panel-py" class="quickstart-panel p-6 bg-slate-950/90 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto relative hidden">
+          <button 
+            id="copy-py-quick" 
+            class="absolute top-4 right-4 px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Salin Kode</span>
+          </button>
+          <pre id="code-py-quick"><span class="text-slate-500"># 1. Install Python MCP SDK</span>
+<span class="text-indigo-400">pip</span> install mcp
+
+<span class="text-slate-500"># 2. Server Python dengan FastMCP (server.py)</span>
+<span class="text-indigo-400">from</span> mcp.server.fastmcp <span class="text-indigo-400">import</span> FastMCP
+
+mcp = FastMCP(<span class="text-emerald-400">"Demo Server"</span>)
+
+<span class="text-slate-500"># Definisikan tool dengan decorator sederhana</span>
+<span class="text-indigo-400">@mcp.tool</span>()
+<span class="text-indigo-400">def</span> <span class="text-cyan-400">get_weather</span>(city: <span class="text-amber-400">str</span>) -> <span class="text-amber-400">str</span>:
+    <span class="text-emerald-400">"""Dapatkan cuaca terkini untuk kota tertentu."""</span>
+    <span class="text-indigo-400">return</span> f<span class="text-emerald-400">"Cuaca di {city}: 28°C, Cerah Berawan"</span>
+
+<span class="text-indigo-400">if</span> __name__ == <span class="text-emerald-400">"__main__"</span>:
+    mcp.run()</pre>
+        </div>
+
+        <!-- Panel 3: Client Config -->
+        <div id="quick-panel-cfg" class="quickstart-panel p-6 bg-slate-950/90 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto relative hidden">
+          <button 
+            id="copy-cfg-quick" 
+            class="absolute top-4 right-4 px-3 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Salin Kode</span>
+          </button>
+          <pre id="code-cfg-quick"><span class="text-slate-500">// Tambahkan ke claude_desktop_config.json</span>
+<span class="text-slate-500">// Lokasi: ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)</span>
+<span class="text-slate-500">//         %APPDATA%/Claude/claude_desktop_config.json (Windows)</span>
+{
+  <span class="token-key">"mcpServers"</span>: {
+    <span class="token-key">"my-database"</span>: {
+      <span class="token-key">"command"</span>: <span class="token-string">"npx"</span>,
+      <span class="token-key">"args"</span>: [
+        <span class="token-string">"-y"</span>,
+        <span class="token-string">"@modelcontextprotocol/server-postgres"</span>,
+        <span class="token-string">"postgresql://localhost/mydb"</span>
+      ]
+    }
+  }
+}</pre>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 9. SECURITY & ENTERPRISE ARCHITECTURE -->
+  <section class="py-20 border-t border-slate-800/80 bg-slate-950/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+        
+        <div class="lg:col-span-1">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>Keamanan Enterprise</span>
+          </div>
+          <h2 class="text-3xl font-extrabold text-white mb-4">
+            Dirancang dengan Keamanan Lokal-Utama (Local-First)
+          </h2>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+            Data rahasia perusahaan tidak pernah bocor ke server pihak ketiga tanpa persetujuan eksplisit.
+          </p>
+          <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
+            <li class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Human-in-the-loop: Pengguna harus menyetujui pemanggilan tool</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Isolasi Sandbox: Pembatasan path direktori lokal ketat</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Stdio Transport: Komunikasi lokal tanpa membuka port jaringan</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="glass-card p-6 rounded-2xl border border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-3">
+              <i data-lucide="lock" class="w-5 h-5"></i>
+            </div>
+            <h4 class="font-bold text-white text-base mb-1">Batasan Akses Granular</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Tentukan izin read-only atau read-write per-koleksi data. Server MCP tidak dapat mengakses file di luar whitelist direktori yang ditentukan.
+            </p>
+          </div>
+
+          <div class="glass-card p-6 rounded-2xl border border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-3">
+              <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <h4 class="font-bold text-white text-base mb-1">Audit Trail & Observability</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Seluruh request JSON-RPC 2.0 dapat dicatat ke file audit log lokal dengan timestamp, argumen fungsi, dan respons eksekusi.
+            </p>
+          </div>
+
+          <div class="glass-card p-6 rounded-2xl border border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3">
+              <i data-lucide="radio" class="w-5 h-5"></i>
+            </div>
+            <h4 class="font-bold text-white text-base mb-1">Fleksibilitas Stdio vs SSE</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Gunakan stdio untuk performa sub-proses lokal nol latensi, atau SSE (Server-Sent Events) untuk microservices terdistribusi.
+            </p>
+          </div>
+
+          <div class="glass-card p-6 rounded-2xl border border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3">
+              <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </div>
+            <h4 class="font-bold text-white text-base mb-1">Dukungan Multi-Model</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Tidak terikat pada satu vendor LLM. Protokol bekerja sama baiknya dengan Claude, GPT-4, Llama lokal, Mistral, dan Gemini.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 10. FAQ ACCORDION -->
+  <section id="faq" class="py-20 relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center mb-14">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+          <span data-i18n="faq_badge">Tanya Jawab</span>
+        </div>
+        <h2 data-i18n="faq_title" class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          Pertanyaan yang Sering Diajukan
+        </h2>
+        <p data-i18n="faq_desc" class="text-slate-400 text-base">
+          Semua yang perlu Anda ketahui mengenai lisensi, kompatibilitas, dan penerapan Model Context Protocol.
+        </p>
+      </div>
+
+      <!-- Accordion Items -->
+      <div class="space-y-4">
+        
+        <!-- FAQ 1 -->
+        <div class="faq-item glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+          <button class="faq-header w-full px-6 py-5 text-left flex items-center justify-between text-white font-semibold text-base hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>Apa itu Model Context Protocol (MCP) dan siapa pembuatnya?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-slate-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-6 pb-5 text-sm text-slate-300 leading-relaxed">
+            Model Context Protocol (MCP) adalah standar terbuka yang dipelopori oleh Anthropic pada akhir 2024. MCP dirancang sebagai protokol universal yang menjembatani asisten AI (seperti Claude, Cursor, Antigravity, dan AI Agents) dengan berbagai sumber data eksternal (database, berkas lokal, devtools, dan API).
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+          <button class="faq-header w-full px-6 py-5 text-left flex items-center justify-between text-white font-semibold text-base hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>Apa bedanya MCP dengan Function Calling bawaan OpenAI / Anthropic?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-slate-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-6 pb-5 text-sm text-slate-300 leading-relaxed">
+            Function Calling biasa hanyalah format skema JSON yang dikirimkan ke model. Anda tetap harus menulis kode runtime, menangani autentikasi, dan memelihara konektor untuk masing-masing aplikasi. MCP adalah <strong>protokol lengkap</strong> yang mencakup discovery dinamis (`tools/list`), stream data terisolasi, manajemen konteks pasif (`resources`), template (`prompts`), dan transport aman lokal via stdio/SSE.
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="faq-item glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+          <button class="faq-header w-full px-6 py-5 text-left flex items-center justify-between text-white font-semibold text-base hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>Apakah MCP open-source dan gratis untuk komersial?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-slate-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-6 pb-5 text-sm text-slate-300 leading-relaxed">
+            Ya! Spesifikasi protokol dan SDK resmi MCP (TypeScript, Python, Kotlin) dirilis di bawah lisensi terbuka (MIT License). Anda bebas menggunakannya untuk proyek pribadi, open-source, maupun enterprise komersial tanpa biaya royalti.
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="faq-item glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+          <button class="faq-header w-full px-6 py-5 text-left flex items-center justify-between text-white font-semibold text-base hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>Aplikasi apa saja yang sudah mendukung MCP Client?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-slate-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-6 pb-5 text-sm text-slate-300 leading-relaxed">
+            Daftar client resmi dan komunitas terus bertambah pesat, meliputi <strong>Claude Desktop</strong>, <strong>Cursor IDE</strong>, <strong>Zed Editor</strong>, <strong>Google Antigravity</strong>, <strong>Sourcegraph Cody</strong>, serta berbagai framework AI agent seperti LangChain, LlamaIndex, dan AutoGen.
+          </div>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="faq-item glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+          <button class="faq-header w-full px-6 py-5 text-left flex items-center justify-between text-white font-semibold text-base hover:text-indigo-400 transition-colors cursor-pointer">
+            <span>Bagaimana cara menghubungkan MCP Server ke database lokal saya?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-slate-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-6 pb-5 text-sm text-slate-300 leading-relaxed">
+            Anda cukup menginstal salah satu server resmi (misalnya `@modelcontextprotocol/server-postgres`) dan menambahkannya ke file konfigurasi client (`claude_desktop_config.json`) dengan menyertakan string koneksi database Anda. Server akan berjalan secara lokal di komputer Anda tanpa mengekspos port ke internet.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 11. CTA BANNER -->
+  <section class="py-16 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-panel rounded-3xl p-8 sm:p-12 border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-slate-900/80 to-cyan-950/40 text-center relative overflow-hidden shadow-2xl">
+        <div class="max-w-2xl mx-auto">
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+            Mulai Kembangkan Server MCP Anda Hari Ini
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base mb-8">
+            Gabung bersama ribuan insinyur perangkat lunak yang membangun generasi baru aplikasi AI terstandarisasi.
+          </p>
+
+          <div class="flex flex-wrap items-center justify-center gap-4">
+            <a 
+              href="https://github.com/modelcontextprotocol" 
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-slate-950 font-bold text-sm hover:bg-slate-100 transition-colors">
+              <svg class="w-4 h-4 fill-current text-slate-950" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span>GitHub Repository</span>
+            </a>
+            <a 
+              href="https://modelcontextprotocol.io" 
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass-card border border-slate-700 text-white font-bold text-sm hover:border-indigo-500 transition-colors">
+              <i data-lucide="book-open" class="w-4 h-4"></i>
+              <span>Dokumentasi Resmi</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. FOOTER -->
+  <footer class="py-12 border-t border-slate-800/80 bg-slate-950 text-slate-400 text-xs sm:text-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        
+        <div class="md:col-span-2 space-y-3">
+          <div class="flex items-center gap-2 text-white font-bold text-base">
+            <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+              <i data-lucide="network" class="w-4 h-4"></i>
+            </div>
+            <span>Model Context Protocol</span>
+          </div>
+          <p data-i18n="footer_tagline" class="text-slate-400 max-w-sm leading-relaxed text-xs">
+            Model Context Protocol — Standar terbuka untuk mengintegrasikan konteks dan alat AI secara aman dan universal.
+          </p>
+          <div class="flex items-center gap-2 text-emerald-400 text-xs font-mono">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Specification Version: 2024-11-05</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 data-i18n="footer_quick_links" class="font-bold text-white mb-3 text-xs uppercase tracking-wider">
+            Tautan Cepat
+          </h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="#about" class="hover:text-indigo-400 transition-colors">Tentang MCP</a></li>
+            <li><a href="#architecture" class="hover:text-indigo-400 transition-colors">Arsitektur</a></li>
+            <li><a href="#primitives" class="hover:text-indigo-400 transition-colors">Empat Primitives</a></li>
+            <li><a href="#playground" class="hover:text-indigo-400 transition-colors">Playground</a></li>
+            <li><a href="#directory" class="hover:text-indigo-400 transition-colors">Katalog Server</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 data-i18n="footer_resources" class="font-bold text-white mb-3 text-xs uppercase tracking-wider">
+            Dokumentasi & Sumber Daya
+          </h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-400 transition-colors" data-i18n="footer_spec">Spesifikasi Resmi MCP</a></li>
+            <li><a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-400 transition-colors" data-i18n="footer_github">GitHub Repository</a></li>
+            <li><a href="https://docs.anthropic.com" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-400 transition-colors" data-i18n="footer_docs">Dokumentasi Anthropic</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div>
+          &copy; 2024-2026 Model Context Protocol Specification. Open Source under MIT License.
+        </div>
+        <div data-i18n="footer_created_with" class="font-mono text-[11px]">
+          Dibuat untuk Komunitas Pengembang AI
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 13. CONFIG INSPECTION MODAL -->
+  <div id="config-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <!-- Backdrop -->
+    <div id="modal-backdrop" class="absolute inset-0 bg-black/75 backdrop-blur-sm cursor-pointer"></div>
+
+    <!-- Modal Content -->
+    <div class="relative glass-panel w-full max-w-2xl rounded-2xl border border-slate-700 p-6 sm:p-8 shadow-2xl z-10">
+      
+      <div class="flex items-start justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
+        <div>
+          <h3 id="modal-server-title" class="text-xl font-bold text-white">Konfigurasi Server</h3>
+          <p class="text-xs text-slate-400 mt-1">Salin konfigurasi ini ke dalam file konfigurasi client Anda</p>
+        </div>
+        <button 
+          id="modal-close-btn" 
+          class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Quick Command -->
+      <div class="mb-4">
+        <label class="text-xs font-mono text-slate-400 block mb-1.5">Perintah Eksekusi Langsung (CLI):</label>
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-indigo-300 overflow-x-auto select-all">
+          <code id="modal-server-cmd"></code>
+        </div>
+      </div>
+
+      <!-- JSON Configuration -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-mono text-slate-400">Konfigurasi Claude Desktop / Cursor (<code class="text-indigo-400">mcpServers</code>):</label>
+          <button 
+            id="modal-copy-btn" 
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition-colors cursor-pointer">
+            <i data-lucide="copy" class="w-3 h-3"></i>
+            <span>Salin JSON</span>
+          </button>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs overflow-x-auto max-h-60">
+          <pre id="modal-config-code"></pre>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="flex items-center justify-between text-xs text-slate-500">
+        <span>Tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-slate-300">Esc</kbd> untuk menutup</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="./app.js"></script>
+</body>
+</html>

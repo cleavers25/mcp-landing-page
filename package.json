@@ -1,0 +1,18 @@
+{
+  "name": "mcp-landing-page",
+  "version": "1.0.0",
+  "description": "Interactive, modern landing page for Model Context Protocol (MCP)",
+  "scripts": {
+    "start": "python3 -m http.server 3000",
+    "serve": "npx -y serve . -l 3000"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "anthropic",
+    "landing-page",
+    "ai"
+  ],
+  "author": "Antigravity Pair Programmer",
+  "license": "MIT"
+}
